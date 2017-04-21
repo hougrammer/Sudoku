@@ -4,13 +4,16 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../Sudoku.cpp 
+../Sudoku.cpp \
+../Tester.cpp 
 
 OBJS += \
-./Sudoku.o 
+./Sudoku.o \
+./Tester.o 
 
 CPP_DEPS += \
-./Sudoku.d 
+./Sudoku.d \
+./Tester.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

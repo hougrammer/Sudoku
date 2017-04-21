@@ -1,15 +1,116 @@
-// thread example
-#include <iostream>       // std::cout
-#include <thread>         // std::thread
+#include "Sudoku.h"
+#include <thread>
+#include <iostream>
 
-using namespace std;
+Sudoku::Sudoku(int board[9][9]) {
+	for (int i = 0; i < 9; i++) {
+		for (int j = 0; j < 9; j++) {
+			this->board[i][j] = board[i][j];
+			this->solution[i][j] = board[i][j];
+		}
+	}
+	solvable = solve();
+}
 
-void checkRow(int board[9][9], bool rowValid[], int row) {
-	bool nums[9];
-	for (int i = 0; i < 9; i++) nums[i] = false;
+void Sudoku::setBoard(int board[9][9]) {
+	for (int i = 0; i < 9; i++) {
+		for (int j = 0; j < 9; j++) {
+			this->board[i][j] = board[i][j];
+			this->solution[i][j] = board[i][j];
+		}
+	}
+	solvable = solve();
+}
+
+void Sudoku::printBoard() {
+	cout << "\n|-----|-----|-----|" << endl;
+	for(int i = 0; i < 9; i++)
+	{
+		for(int j = 0; j < 9; j++) {
+			if (board[i][j]) cout << "|" << board[i][j];
+			else cout << "| ";
+		}
+		cout << "|" << endl;
+
+		if((i+1)%3 == 0)
+			cout << "|-----|-----|-----|" << endl;
+	}
+}
+void Sudoku::printSolution() {
+	if (!solvable) {
+		cout << "The board is not solvable.\n";
+		return;
+	}
+	cout << "\n|-----|-----|-----|" << endl;
+	for(int i = 0; i < 9; i++)
+	{
+		for(int j = 0; j < 9; j++) {
+			if (solution[i][j]) cout << "|" << solution[i][j];
+			else cout << "| ";
+		}
+		cout << "|" << endl;
+
+		if((i+1)%3 == 0)
+			cout << "|-----|-----|-----|" << endl;
+	}
+}
+bool Sudoku::check() {
+	thread rowCheckers[9], colCheckers[9], sqrCheckers[9];
+	for (int i = 0; i < 9; i++) {
+		rowCheckers[i] = getRowThread(i);
+		colCheckers[i] = getColThread(i);
+		sqrCheckers[i] = getSqrThread(i);
+	}
+	for (int i = 0; i < 9; i++) {
+		rowCheckers[i].join();
+		colCheckers[i].join();
+		sqrCheckers[i].join();
+	}
+	for (bool b : rowValid) if (!b) return false;
+	for (bool b : colValid) if (!b) return false;
+	for (bool b : sqrValid) if (!b) return false;
+	return true;
+}
+
+bool Sudoku::check(int row, int col) {
+	int sqr = (row/3)*3+(col/3);
+	thread rowChecker = getRowThread(row);
+	thread colChecker = getColThread(col);
+	thread sqrChecker = getSqrThread(sqr);
+	rowChecker.join();
+	colChecker.join();
+	sqrChecker.join();
+	if (rowValid[row] && colValid[col] && sqrValid[sqr]) return true;
+	return false;
+}
+
+bool Sudoku::solve() {
+	for (int r = 0; r < 9; r++) {
+		for (int c = 0; c < 9; c++) {
+			if (!solution[r][c]) {
+				for (int n = 1; n <= 9; n++) {
+					solution[r][c] = n;
+					if (check(r,c)) {
+
+						if (solve()) return true;
+
+					}
+					solution[r][c] = 0;
+				}
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void Sudoku::checkRow(int row) {
+	bool nums[10];
+	for (int i = 0; i < 10; i++) nums[i] = false;
+
 	for (int c = 0; c < 9; c++) {
-		int n = board[row][c];
-		if (nums[n]) {
+		int n = solution[row][c];
+		if (n && nums[n]) {
 			rowValid[row] = false;
 			return;
 		}
@@ -18,12 +119,13 @@ void checkRow(int board[9][9], bool rowValid[], int row) {
 	rowValid[row] = true;
 }
 
-void checkCol(int board[9][9], bool colValid[], int col) {
-	bool nums[9];
-	for (int i = 0; i < 9; i++) nums[i] = false;
+void Sudoku::checkCol(int col) {
+	bool nums[10];
+	for (int i = 0; i < 10; i++) nums[i] = false;
+
 	for (int r = 0; r < 9; r++) {
-		int n = board[r][col];
-		if (nums[n]) {
+		int n = solution[r][col];
+		if (n && nums[n]) {
 			colValid[col] = false;
 			return;
 		}
@@ -32,14 +134,15 @@ void checkCol(int board[9][9], bool colValid[], int col) {
 	colValid[col] = true;
 }
 
-void checkSqr(int board[9][9], bool sqrValid[], int sqr) {
-	bool nums[9];
-	for (int i = 0; i < 9; i++) nums[i] = false;
+void Sudoku::checkSqr(int sqr) {
+	bool nums[10];
+	for (int i = 0; i < 10; i++) nums[i] = false;
+
 	int rstart = (sqr/3)*3, cstart = (sqr%3)*3;
 	for (int r = rstart; r < rstart + 3; r++) {
 		for (int c = cstart; c < cstart + 3; c++) {
-			int n = board[r][c];
-			if (nums[n]) {
+			int n = solution[r][c];
+			if (n && nums[n]) {
 				sqrValid[sqr] = false;
 				return;
 			}
@@ -49,34 +152,14 @@ void checkSqr(int board[9][9], bool sqrValid[], int sqr) {
 	sqrValid[sqr] = true;
 }
 
-int main()
-{
-	int board[9][9] = {
-				{6,2,4,5,3,9,1,8,7},
-				{5,1,9,7,2,8,6,3,4},
-				{8,3,7,6,1,4,2,9,5},
-				{1,4,3,8,6,5,7,2,9},
-				{9,5,8,2,4,7,3,6,1},
-				{7,6,2,3,9,1,4,5,8},
-				{3,7,1,9,5,6,8,4,2},
-				{4,9,6,1,8,2,5,7,3},
-				{2,8,5,4,7,3,9,1,6}
-		};
+thread Sudoku::getRowThread(int row) {
+	return thread(&Sudoku::checkRow, this, row);
+}
 
-	bool rowValid[9], colValid[9], sqrValid[9];
-	thread rowCheckers[9], colCheckers[9], sqrCheckers[9];
-	for (int i = 0; i < 9; i++) {
-		rowCheckers[i] = thread(checkRow, board, rowValid, i);
-		colCheckers[i] = thread(checkCol, board, colValid, i);
-		sqrCheckers[i] = thread(checkSqr, board, sqrValid, i);
-	}
-	for (int i = 0; i < 9; i++) {
-		rowCheckers[i].join();
-		colCheckers[i].join();
-		sqrCheckers[i].join();
-	}
+thread Sudoku::getColThread(int col) {
+	return thread(&Sudoku::checkCol, this, col);
+}
 
-	for (bool x : rowValid) cout << x;
-
-	return 0;
+thread Sudoku::getSqrThread(int sqr) {
+	return thread(&Sudoku::checkSqr, this, sqr);
 }

@@ -1,1 +1,3 @@
-Sudoku.o: ../Sudoku.cpp
+Sudoku.o: ../Sudoku.cpp ../Sudoku.h
+
+../Sudoku.h:
