@@ -8,7 +8,10 @@ using namespace std;
 class Sudoku {
 public:
 	Sudoku(int board[9][9]);
-	void setBoard(int board[9][9]);
+	Sudoku(int board[9][9], bool multithread);
+	void setMultithread(bool b);
+	void newBoard();
+	void newBoard(int board[9][9]);
 	void printBoard();
 	void printSolution();
 	bool check();
@@ -29,6 +32,7 @@ private:
 	int board[9][9];
 	int solution[9][9];
 	bool solvable;
+	bool multithread;
 };
 
 #endif /* SUDOKU_H_ */
