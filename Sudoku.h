@@ -7,6 +7,7 @@ using namespace std;
 
 class Sudoku {
 public:
+	Sudoku();
 	Sudoku(int board[9][9]);
 	Sudoku(int board[9][9], bool multithread);
 	void setMultithread(bool b);
